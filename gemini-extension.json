@@ -1,7 +1,7 @@
 {
   "name": "nitrosend",
   "version": "1.0.0",
-  "description": "Email marketing for AI agents: newsletters, email campaigns, email automation and transactional emails.",
+  "description": "Email marketing for AI agents: write and send newsletters and email campaigns, build email automation and drip campaigns (welcome series, abandoned cart, win-back), send transactional emails through the email API, manage contacts, subscribers, mailing lists and segments, check email deliverability and track open rates. Migrate from Mailchimp or Klaviyo; works with Shopify, Stripe, HubSpot and Attio.",
   "mcpServers": {
     "nitrosend": {
       "httpUrl": "https://api.nitrosend.com/mcp"
