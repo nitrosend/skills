@@ -1,0 +1,37 @@
+{
+  "name": "nitrosend",
+  "displayName": "Nitrosend: AI Email Marketing",
+  "description": "Email marketing for AI agents: write and send newsletters, email campaigns, automated email flows and transactional emails, and manage contacts.",
+  "version": "1.0.0",
+  "logo": "assets/logo.svg",
+  "author": {
+    "name": "Nitrosend",
+    "email": "contact@nitrosend.com",
+    "url": "https://nitrosend.com"
+  },
+  "homepage": "https://nitrosend.com",
+  "repository": "https://github.com/nitrosend/skills",
+  "license": "MIT",
+  "keywords": [
+    "email marketing",
+    "email",
+    "newsletter",
+    "email campaigns",
+    "email automation",
+    "transactional email",
+    "marketing automation",
+    "mailing list",
+    "abandoned cart",
+    "welcome email",
+    "deliverability",
+    "shopify",
+    "mailchimp",
+    "klaviyo",
+    "mcp"
+  ],
+  "suggestedPrompts": [
+    "Set up Nitrosend and build my email Brand Kit from my website",
+    "Write this week's newsletter and send it to my subscribers on Thursday",
+    "Build a welcome series for new subscribers"
+  ]
+}

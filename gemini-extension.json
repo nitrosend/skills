@@ -1,0 +1,11 @@
+{
+  "name": "nitrosend",
+  "version": "1.0.0",
+  "description": "Email marketing for AI agents: newsletters, email campaigns, email automation and transactional emails.",
+  "mcpServers": {
+    "nitrosend": {
+      "httpUrl": "https://api.nitrosend.com/mcp"
+    }
+  },
+  "contextFileName": "GEMINI.md"
+}

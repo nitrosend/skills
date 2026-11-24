@@ -1,0 +1,152 @@
+---
+name: nitrosend-setup
+description: >
+  Guided Nitrosend email marketing setup. Walks through remote MCP
+  connection, the Brand Kit from the website, brand-subdomain preparation or
+  customer sending-domain verification (SPF, DKIM, DMARC), and sender
+  defaults. Also offers to configure proactive analytics (daily, weekly or
+  monthly reports). Use when: "set up nitrosend", "configure email",
+  "onboard", "get started with nitrosend", or when nitro_get_status shows
+  incomplete onboarding.
+---
+
+# Nitrosend Setup
+
+Guide the user through Nitrosend onboarding. Check what's already done and skip completed steps.
+
+## Connection Surface
+
+Connect the Nitrosend remote MCP server at `https://api.nitrosend.com/mcp`.
+Sign-in is browser OAuth: no API key. If this skill came with a Nitrosend
+plugin or extension (Antigravity, Gemini CLI), the server is already bundled.
+Otherwise add it in the agent's MCP settings:
+
+- OpenClaw: `openclaw mcp add nitrosend --url https://api.nitrosend.com/mcp --transport streamable-http`, then `openclaw mcp login nitrosend`
+- Hermes Agent: add `nitrosend: {url: "https://api.nitrosend.com/mcp", auth: oauth}` under
+  `mcp_servers` in `~/.hermes/config.yaml`, then `hermes mcp login nitrosend`
+- Any other client (ChatGPT, Claude, Codex, Cursor, VS Code, Windsurf): use
+  the per-client guide at https://docs.nitrosend.com/integrations/overview
+
+Use the CLI only when the user explicitly wants a terminal, CI, or headless
+agent-runner workflow. If a command sandbox cannot reach `api.nitrosend.com`,
+treat that as sandbox egress, not as a reason to switch to the CLI.
+
+## Step 1: Check Current State
+
+Run `nitro_get_status` to see what's already configured. Report the current state briefly.
+
+## Step 2: Connection
+
+If the MCP server is connected, OAuth is already working. Confirm this.
+
+If not connected, tell the user:
+1. Open the MCP or connectors settings in their client
+2. Select the bundled `nitrosend` server if a Nitrosend plugin is installed.
+   Otherwise add `https://api.nitrosend.com/mcp`
+   using the guide for that client at
+   https://docs.nitrosend.com/integrations/overview
+3. Complete the browser sign-in and approval flow
+4. Verify the connection with `nitro_get_status`
+
+### Multiple Accounts
+
+If the user needs a different Nitrosend account on an OAuth connection:
+
+1. Run `nitro_get_status` and read the ids from `available_accounts.items[*].id`
+2. Run `nitro_select_account` with the target `account_id`; the switch takes
+   effect on the next tool call and lands on that account's default brand
+3. Re-run `nitro_get_status` to confirm, then `nitro_select_brand` if a
+   non-default brand is needed
+
+API-key connections are pinned to one account and cannot switch.
+
+## Step 3: Brand Kit
+
+If the brand has no real business context, ask the user for their website URL and run
+`nitro_set_brand_kit` with `url`, the default synchronous mode, and a stable
+`idempotency_key`. Let them override any scraped values. Reuse that key only
+for an exact retry.
+
+If they don't have a website, ask for:
+- Company name
+- A sentence about what the business offers and who it is for
+
+Save `fields.company_name` and `fields.company_description`. Use the theme
+schema's default brand colour unless one is supplied. Do not ask for a hex
+colour or logo before understanding the business, and never invent "My Brand"
+or a description. A name and colour alone are not enough to write from.
+
+Read `brand.welcome_email` in status before composing. A queued, writing or
+sending preview is already being prepared on the server; let it finish and
+read its campaign. If written or sent, show the existing draft. Do not create
+or send another first email just because the agent has connected. This owner
+preview never sends to subscribers.
+
+Send direct identity values in `fields`. Pass a public `logo_url` separately;
+remote logo fetches also require a stable `idempotency_key`. For a local image,
+use `nitro_ingest` first and pass its returned `media_url` or `image_url`.
+
+## Step 4: Sending Domain
+
+Read `brand_subdomain` from `nitro_get_status`. If there is no ready selected
+sender, offer these two explicit paths:
+
+1. Recommended quick start: call `nitro_manage_domains` with
+   `operation: "prepare_brand_subdomain"`. This reserves the brand-matched
+   `<name>.nitrosend.net` address and creates its local sending identity under
+   Nitrosend's verified root. No per-brand DNS or DKIM work is needed. It
+   sends no email and preserves an existing sender selection.
+2. If needed, poll `nitro_get_status` until `brand_subdomain.ready` is true.
+   Only if it is not selected, call
+   `nitro_manage_domains` with `operation: "select_brand_subdomain"` and the
+   user's chosen `local_part` (default `hello`). Never infer selection from
+   readiness.
+3. Customer-domain alternative: use `nitro_manage_domains` with
+   `operation: "add"`, show the returned DNS records, wait for the user to add
+   them, then use `operation: "verify"`. It names any record still missing and
+   is safe to repeat; once the records are in place, Nitrosend verifies the
+   domain on its own, and `verify` shows its progress.
+
+Do not claim that account creation or a draft consumes sending infrastructure.
+Do not describe a shared sender or an allowance for unverified sending.
+
+## Step 5: Sender Defaults
+
+Use `nitro_configure_account` to set:
+- `from_name`: Their preferred sender name
+- `from_email`: Must match the explicitly selected Nitrosend brand-subdomain
+  sender or a verified customer domain
+- `reply_to`: Where replies should go
+- `test_email_recipients`: Up to 5 emails for test sends
+
+## Step 6: Proactive Analytics (Optional)
+
+Offer proactive analytics only if the current host exposes a scheduled-task
+capability. If it does not, say that recurring reports are unavailable in this
+client and continue without inventing a task tool. When scheduling is available:
+
+- **Daily** (weekday mornings): Quick summary of new subscribers and any sending activity from yesterday. Use `nitro_get_insights` with `period: "7d"` and `nitro_query` for recent contacts.
+- **Weekly** (Monday): Open/click rates, list growth, deliverability summary. Use `nitro_get_insights` with `period: "7d"` for trends.
+- **Monthly** (1st of month): Deep dive using `nitro_get_insights` with
+  `period: "30d"`, comparing with the account's prior periods and any
+  benchmarks returned by the live tool.
+
+Use only the scheduling operation actually exposed by the host. Suggested cron expressions:
+- Daily: `"23 8 * * 1-5"` (8:23am weekdays)
+- Weekly: `"47 8 * * 1"` (8:47am Mondays)
+- Monthly: `"13 9 1 * *"` (9:13am on the 1st)
+
+## Product Questions
+
+For any Nitrosend product question not answered by the current context (how a
+feature works, setup or verification steps, API/SDK/CLI usage, integrations),
+call `nitro_search_docs` and treat the returned excerpts as the source of truth.
+If they do not establish an answer, search again or say what is not verified;
+never invent product behavior.
+
+## Completion
+
+Summarize what was configured and suggest next steps by skill name:
+- Create a first email with `compose-email`
+- Add an audience with `import-contacts`
+- Build an automation with `build-flow`
