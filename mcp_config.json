@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "nitrosend": {
-      "url": "https://api.nitrosend.com/mcp"
+      "serverUrl": "https://api.nitrosend.com/mcp"
     }
   }
 }
